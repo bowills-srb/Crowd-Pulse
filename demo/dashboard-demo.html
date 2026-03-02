@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdPulse - Venue Dashboard Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.10.0/umd/Recharts.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { background: #0a0a0a; }
+    .animate-pulse-slow { animation: pulse 3s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } = Recharts;
+
+    // Mock data
+    const mockVenue = {
+      id: '1',
+      name: "The Rustic Tap",
+      address: "123 6th Street, Austin, TX",
+      category: "bar",
+      currentCrowd: 67,
+      trend: "filling_up",
+      todayCheckIns: 89,
+      profileViews: 234,
+      avgDwellTime: 47,
+    };
+
+    const mockHourlyData = [
+      { hour: 17, avgCapacity: 15 },
+      { hour: 18, avgCapacity: 25 },
+      { hour: 19, avgCapacity: 42 },
+      { hour: 20, avgCapacity: 58 },
+      { hour: 21, avgCapacity: 75 },
+      { hour: 22, avgCapacity: 88 },
+      { hour: 23, avgCapacity: 92 },
+      { hour: 24, avgCapacity: 78 },
+      { hour: 1, avgCapacity: 45 },
+      { hour: 2, avgCapacity: 20 },
+    ];
+
+    const mockLiveReadings = [
+      { time: '10:30', percent: 58 },
+      { time: '10:35', percent: 61 },
+      { time: '10:40', percent: 63 },
+      { time: '10:45', percent: 65 },
+      { time: '10:50', percent: 67 },
+    ];
+
+    const mockPromotions = [
+      { id: 1, title: "Happy Hour Special", type: "happy_hour", discount: 25, status: "active", impressions: 1240, clicks: 89 },
+      { id: 2, title: "Live Music Tonight", type: "event", status: "scheduled", impressions: 0, clicks: 0 },
+    ];
+
+    // Icons as simple SVG components
+    const Icons = {
+      MapPin: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+      Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+      TrendingUp: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+      Eye: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+      Clock: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      Zap: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+      BarChart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+      Megaphone: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>,
+      Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    };
+
+    function StatCard({ title, value, icon: Icon, color }) {
+      return (
+        <div className="bg-gray-900 rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+              <Icon />
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">{title}</p>
+              <p className="text-2xl font-bold text-white">{value}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function getCrowdColor(percent) {
+      if (percent < 30) return 'text-green-400';
+      if (percent < 60) return 'text-yellow-400';
+      if (percent < 80) return 'text-orange-400';
+      return 'text-red-400';
+    }
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [crowdPercent, setCrowdPercent] = useState(67);
+      
+      // Simulate live updates
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setCrowdPercent(prev => {
+            const change = Math.random() > 0.5 ? 1 : -1;
+            return Math.min(100, Math.max(0, prev + change));
+          });
+        }, 3000);
+        return () => clearInterval(interval);
+      }, []);
+
+      const navItems = [
+        { id: 'dashboard', label: 'Dashboard', icon: Icons.BarChart },
+        { id: 'analytics', label: 'Analytics', icon: Icons.TrendingUp },
+        { id: 'promotions', label: 'Promotions', icon: Icons.Megaphone },
+        { id: 'settings', label: 'Settings', icon: Icons.Settings },
+      ];
+
+      return (
+        <div className="min-h-screen bg-gray-950 flex">
+          {/* Sidebar */}
+          <div className="w-64 bg-gray-900 p-6 hidden md:block">
+            <div className="flex items-center gap-2 mb-8">
+              <div className="text-indigo-500"><Icons.MapPin /></div>
+              <span className="text-xl font-bold text-white">CrowdPulse</span>
+            </div>
+            
+            <nav className="space-y-2">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === item.id
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <item.icon />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="absolute bottom-6 left-6 right-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
+                  <span className="text-white font-medium">JD</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">John's Bar LLC</p>
+                  <p className="text-xs text-gray-400">Pro Plan</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 p-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+              <p className="text-gray-400">Real-time venue insights for {mockVenue.name}</p>
+            </div>
+
+            {/* Live Crowd Card */}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 mb-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white">Live Now</h2>
+                <div className="flex items-center gap-2 text-white/70 text-sm">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  Real-time
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Capacity</p>
+                  <p className={`text-4xl font-bold ${getCrowdColor(crowdPercent)}`}>
+                    {crowdPercent}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Est. Crowd</p>
+                  <p className="text-4xl font-bold text-white">
+                    {Math.round(crowdPercent * 1.5)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">App Users</p>
+                  <p className="text-4xl font-bold text-white">12</p>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Trend</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-300"><Icons.TrendingUp /></span>
+                    <span className="text-white font-medium">Filling Up</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live mini chart */}
+              <div className="mt-6 h-16">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={mockLiveReadings}>
+                    <Area 
+                      type="monotone" 
+                      dataKey="percent" 
+                      stroke="#fff" 
+                      fill="rgba(255,255,255,0.2)" 
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <StatCard
+                title="Today's Check-ins"
+                value={mockVenue.todayCheckIns}
+                icon={Icons.Users}
+                color="bg-blue-500/20 text-blue-400"
+              />
+              <StatCard
+                title="Profile Views (7d)"
+                value={mockVenue.profileViews}
+                icon={Icons.Eye}
+                color="bg-purple-500/20 text-purple-400"
+              />
+              <StatCard
+                title="Avg Dwell Time"
+                value={`${mockVenue.avgDwellTime} min`}
+                icon={Icons.Clock}
+                color="bg-green-500/20 text-green-400"
+              />
+            </div>
+
+            {/* Hourly Chart */}
+            <div className="bg-gray-900 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Typical Crowd by Hour</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={mockHourlyData}>
+                    <XAxis 
+                      dataKey="hour" 
+                      stroke="#666"
+                      tickFormatter={(h) => `${h > 12 ? h - 12 : h}${h >= 12 ? 'pm' : 'am'}`}
+                    />
+                    <YAxis stroke="#666" tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                      labelFormatter={(h) => `${h > 12 ? h - 12 : h}:00 ${h >= 12 ? 'PM' : 'AM'}`}
+                      formatter={(v) => [`${v}%`, 'Capacity']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="avgCapacity" 
+                      stroke="#6366f1" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Active Promotions */}
+            <div className="bg-gray-900 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Active Promotions</h3>
+                <button className="text-sm text-indigo-400 hover:text-indigo-300">+ New Promo</button>
+              </div>
+              
+              <div className="space-y-3">
+                {mockPromotions.map(promo => (
+                  <div key={promo.id} className="bg-gray-800 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-medium">{promo.title}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          promo.status === 'active' 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {promo.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-sm">
+                        {promo.impressions} impressions • {promo.clicks} clicks
+                        {promo.impressions > 0 && ` • ${((promo.clicks / promo.impressions) * 100).toFixed(1)}% CTR`}
+                      </p>
+                    </div>
+                    {promo.discount && (
+                      <span className="text-green-400 font-bold">{promo.discount}% off</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

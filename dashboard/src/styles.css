@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-base: #08111a;
+  --bg-surface: #0f1d2b;
+  --bg-elevated: #13263a;
+  --stroke: rgba(125, 181, 228, 0.24);
+  --text-main: #ecf5ff;
+  --text-muted: #98aec5;
+  --brand: #2cc7b8;
+  --brand-strong: #13a08f;
+  --accent: #f2a65a;
+  --danger: #ef5d5d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(50rem 32rem at 12% -5%, rgba(44, 199, 184, 0.26), transparent 62%),
+    radial-gradient(40rem 30rem at 90% 8%, rgba(242, 166, 90, 0.2), transparent 62%),
+    linear-gradient(165deg, #04090f 0%, #08111a 38%, #0d1a26 100%);
+}
+
+select,
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(120, 176, 225, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 176, 225, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at 50% 30%, black 35%, transparent 90%);
+  pointer-events: none;
+}
+
+.panel {
+  background: linear-gradient(145deg, rgba(16, 31, 47, 0.94), rgba(11, 21, 34, 0.95));
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(3, 8, 14, 0.45);
+}
+
+.panel-soft {
+  background: linear-gradient(145deg, rgba(19, 38, 58, 0.88), rgba(15, 29, 43, 0.9));
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, var(--brand), #35d8cc);
+  color: #042926;
+}
+
+.heading-display {
+  letter-spacing: -0.02em;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.btn-primary {
+  background: linear-gradient(125deg, var(--brand), #39d4c7);
+  color: #062521;
+  border: none;
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.btn-secondary {
+  background: rgba(20, 39, 58, 0.86);
+  border: 1px solid var(--stroke);
+  color: var(--text-main);
+}
+
+.field {
+  width: 100%;
+  color: var(--text-main);
+  background: rgba(8, 17, 27, 0.85);
+  border: 1px solid rgba(125, 181, 228, 0.28);
+  border-radius: 12px;
+  padding: 0.72rem 0.88rem;
+  outline: none;
+}
+
+.field:focus {
+  border-color: rgba(44, 199, 184, 0.72);
+  box-shadow: 0 0 0 3px rgba(44, 199, 184, 0.18);
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.fade-in {
+  animation: fadeIn 420ms ease both;
+}
+
+.stagger-1 {
+  animation-delay: 70ms;
+}
+
+.stagger-2 {
+  animation-delay: 140ms;
+}
+
+.stagger-3 {
+  animation-delay: 210ms;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
